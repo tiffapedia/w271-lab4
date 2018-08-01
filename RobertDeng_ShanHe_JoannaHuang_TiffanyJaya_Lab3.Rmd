@@ -1,0 +1,10 @@
+---
+title: "W271 Lab 3"
+author: "Tiffany Jaya, Joanna Huang, Robert Deng, Shan He"
+output: 
+  pdf_document:
+  toc: true
+  number_sections: true
+fontsize: 11pt
+geometry: margin=1in
+---
