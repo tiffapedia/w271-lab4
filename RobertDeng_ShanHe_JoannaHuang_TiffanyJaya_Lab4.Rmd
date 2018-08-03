@@ -1,7 +1,7 @@
 ---
-title: "Statistical Methods for Discrete Response, Time Series, and Panel Data (W271): Lab 4"
-author: "Professor Jeffrey Yau"
-date: "July 29, 2018"
+title: "W271: Lab 4"
+author: "Tiffany Jaya, Joanna Huang, Robert Deng, Shan He"
+date: "August 10, 2018"
 output:
   pdf_document: default
 ---
@@ -21,6 +21,8 @@ library(Hmisc)
 library(ggplot2)
 library(lattice)
 library(plm)
+library(grid)
+library(gridExtra)
 opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
 ```
 
@@ -34,17 +36,32 @@ Specifically, this data set contains data for the 48 continental U.S. states fro
 
 1. Load the data. Provide a description of the basic structure of the dataset, as we have done in throughout the semester. Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable *totfatrte* and the potential explanatory variables. You need to write a detailed narrative of your observations of your EDA. *Reminder: giving an "output dump" (i.e. providing a bunch of graphs and tables without description and hoping your audience will interpret them) will receive zero point in this exercise.*
 
-This dataset contains 1200 observations of 56 variables that spans across 25 years from 1980 to 2004. There is a year column, as well as 25 dummy variables corresponding to each year. The dataset contains data for 48 continental U.S. states and each state is numbered from 1 to 51 with 2, 9 and 12 missing. Remaining columns hold variables related to state's traffic laws, traffic fatalities, and population demographics.
+This dataset contains 1200 observations of 56 variables that spans across 25 years from 1980 to 2004. There is a year column, as well as 25 dummy variables corresponding to each year. The dataset contains data for 48 continental U.S. states and each state is numbered from 1 to 51 with 2, 9 and 12 missing. Remaining columns hold variables related to state's traffic laws, traffic fatalities, and population demographics. Below we list the variables, their definitions and their values:
+*Traffic Laws*
+- "sl*" variables correspond to the speed limit mandated by the state in a given year. For example, "sl55" relates to whether or not a state had a 55 mph speed limit. Values range from 0 to 1, with fractions representing the amount of time for which the limit was enforced by law that year given a change in state law. 
+- "seatbelt" consists of values 0, 1 and 2 with 0 being no seatbelt law, 1 being primary (no other violation required to give a ticket), and 2 being secondary (additional violated required for a ticket). Dummy variables, "sbprim" and "sbsecon", also signify the the same thing. 
+*Alcohol-Related Traffic Laws*
+- "minage" is the minimum drinking age, with values from 18-21 and the majority being 21 years old. 
+- "zerotol" indiciates whether or not a state enacted a Zero Tolerance policy for drinking that makes it a criminal offense when drivers under the age of 21 drive with even a small amount of alcohol in their system. Values under this column consist mostly of 0's and 1's with occasional fractions. 
+- "bac" columns denote the blood alcohol content allowed by each state, with "bac08" representing 8% and "bac10" representing 10%.
+- "perse" relates to "Per se" laws in DUI cases. This law establishes that once an individual is shown to have a BAC at or above the state's allowed percent, that person is considered intoxicated by law. Such laws allow a person to be established as impaired without on-scene evaluation such as sobriety testing. Values range from 0 to 1, with fractions representing the amount of time for which the limit was enforced by law that year given a change in state law. 
+*Traffic Fatalities*
+- totfat: total traffic fatalities
+- nghtfat: total nighttime fatalities
+- wkndfat: total weekend fatalities
+- totfatpvm: total fatalities per 100 million miles
+- nghtfatpvm: nighttime fatalities per 100 million miles
+- wkndfatpvm: weekend fatalities per 100 million miles
+- totfatrte: total fatalities per 100,000 population
+- nghtfatrte: nighttime fatalities per 100,000 population
+- wkndfatrte: weekend accidents per 100,000 population
+*Demographics*
+- gdl: graduated drivers license law
+- statepop: state population
+- vehicmiles: vehicle miles traveled, billions
+- unem: unemployment rate, percent
+- perc14_24: percent population aged 14 through 24
 
-"sl*" variables correspond to the speed limit mandated by the state in a given year. For example, "sl55" relates to whether or not a state had a 55 mph speed limit. Values range from 0 to 1, with fractions representing the amount of time for which the limit was enforced by law that year given a change in state law. 
-
-"seatbelt", "sbprim", "sbsecon" refer to the state seatbelt laws. "seatbelt" consists of values 0, 1 and 2 with 0 being no law, 1 being primary (no other violation required to give a ticket), and 2 being secondary (additional violated required for a ticket). Dummy variables, "sbprim" and "sbsecon", also signify the the same thing. 
-
-"minage", "zerotol", "bac*" relate to the state's drinking laws. "minage" is the minimum drinking age, with values from 18-21 and the majority being 21 years old. 
-
-"perse"
-
-Fatalities
 ```{r}
 load("driving.RData", d <- new.env())
 traffic = data
@@ -52,28 +69,62 @@ traffic = data
 table(with(traffic,state,year))
 ```
 
+```{r}
 
+d1 <- traffic %>% ggplot(aes(totfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total")
+
+d2 <- traffic %>% ggplot(aes(nghtfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night")
+
+d3 <- traffic %>% ggplot(aes(wkndfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend")
+
+d4 <- traffic %>% ggplot(aes(totfatpvm)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total/Mile Driven")
+
+d5 <- traffic %>% ggplot(aes(nghtfatpvm)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night/Mile Driven")
+
+d6 <- traffic %>% ggplot(aes(wkndfatpvm)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend/Mile Driven")
+
+d7 <- traffic %>% ggplot(aes(totfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total Per Capita")
+
+d8 <- traffic %>% ggplot(aes(nghtfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night Per Capita")
+
+d9 <- traffic %>% ggplot(aes(wkndfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend Per Capita")
+
+grid.arrange(d1, d2, d3, d4, d5, d6, d7, d8, d9, nrow = 3, ncol = 3, top = quote("Traffic Fatalities"))
+```
+All fatality variables skew right, with the skew most apparent when not normalized by population or by mileage. 
 
 ```{r}
-traffic %>%
-  ggplot(aes(totfat)) +
-  geom_density(kernel = "gaussian", size = 1) +
-  theme_bw()
+t <- theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+b1 <- traffic %>% ggplot(aes(factor(year), totfat)) + geom_boxplot()  + ggtitle("Total") +t
+b2 <- traffic %>% ggplot(aes(factor(year), nghtfat)) + geom_boxplot()  + ggtitle("Night") +t
+b3 <- traffic %>% ggplot(aes(factor(year), wkndfat)) + geom_boxplot() + ggtitle("Weekend") +t
+b4 <- traffic %>% ggplot(aes(factor(year), totfatpvm)) + geom_boxplot() + ggtitle("Total/Mile Driven") +t
+b5 <- traffic %>% ggplot(aes(factor(year),nghtfatpvm)) + geom_boxplot() + ggtitle("Night/Mile Driven") +t
+b6 <- traffic %>% ggplot(aes(factor(year),wkndfatpvm)) + geom_boxplot() + ggtitle("Weekend/Mile Driven") +t
+b7 <- traffic %>% ggplot(aes(factor(year),totfatrte)) + geom_boxplot() + ggtitle("Total Per Capita") +t
+b8 <- traffic %>% ggplot(aes(factor(year),nghtfatrte)) + geom_boxplot() + ggtitle("Night Per Capita") +t
+b9 <- traffic %>% ggplot(aes(factor(year),wkndfatrte)) + geom_boxplot() + ggtitle("Weekend Per Capita") +t
 
-traffic %>%
-  ggplot(aes(nghtfat)) +
-  geom_density(kernel = "gaussian", size = 1) +
-  theme_bw()
-
-traffic %>%
-  ggplot(aes(wkndfat)) +
-  geom_density(kernel = "gaussian", size = 1) +
-  theme_bw()
+grid.arrange(b1,b2,b3,b4,b5,b6,b7,b8,b9, nrow = 3, ncol = 3, top = quote("Traffic Fatalities by Year: 1980-2004"))
 ```
+The number of fatalities across total, night and weekend look mostly unchanged over the years. However, when looking at noramlized fatality rates, there are obvious downward trends. 
+
+
 
 2. How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a very simple regression model of totfatrte on dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
 
+The dependent variable of interest *totfatrte* is total fatalities per 100,000 population. The average total fatality rate shows a downward trend from 25 per 100,000 residents in 1980 to 17 in 2004. There's a steep drop from 1980 to 1983 and then from 1988 to 1992.
+```{r}
+plot(aggregate(traffic['totfatrte'], list(traffic$year), mean))
+```
 
+```{r}
+m1 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04, data=traffic)
+summary(m1)
+```
+This model suggests that time was a statistically significant variable at the 1% signifiance level every year except 1981. 
 
 3. Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
 
