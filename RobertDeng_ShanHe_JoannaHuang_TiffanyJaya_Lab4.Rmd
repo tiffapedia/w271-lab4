@@ -37,9 +37,11 @@ Specifically, this data set contains data for the 48 continental U.S. states fro
 1. Load the data. Provide a description of the basic structure of the dataset, as we have done in throughout the semester. Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable *totfatrte* and the potential explanatory variables. You need to write a detailed narrative of your observations of your EDA. *Reminder: giving an "output dump" (i.e. providing a bunch of graphs and tables without description and hoping your audience will interpret them) will receive zero point in this exercise.*
 
 This dataset contains 1200 observations of 56 variables that spans across 25 years from 1980 to 2004. There is a year column, as well as 25 dummy variables corresponding to each year. The dataset contains data for 48 continental U.S. states and each state is numbered from 1 to 51 with 2, 9 and 12 missing. Remaining columns hold variables related to state's traffic laws, traffic fatalities, and population demographics. Below we list the variables, their definitions and their values:
+
 *Traffic Laws*
 - "sl*" variables correspond to the speed limit mandated by the state in a given year. For example, "sl55" relates to whether or not a state had a 55 mph speed limit. Values range from 0 to 1, with fractions representing the amount of time for which the limit was enforced by law that year given a change in state law. 
 - "seatbelt" consists of values 0, 1 and 2 with 0 being no seatbelt law, 1 being primary (no other violation required to give a ticket), and 2 being secondary (additional violated required for a ticket). Dummy variables, "sbprim" and "sbsecon", also signify the the same thing. 
+
 *Alcohol-Related Traffic Laws*
 - "minage" is the minimum drinking age, with values from 18-21 and the majority being 21 years old. 
 - "zerotol" indiciates whether or not a state enacted a Zero Tolerance policy for drinking that makes it a criminal offense when drivers under the age of 21 drive with even a small amount of alcohol in their system. Values under this column consist mostly of 0's and 1's with occasional fractions. 
@@ -63,10 +65,12 @@ This dataset contains 1200 observations of 56 variables that spans across 25 yea
 - perc14_24: percent population aged 14 through 24
 
 ```{r}
-load("driving.RData", d <- new.env())
-traffic = data
+load("data/driving.RData")
+traffic <- data
 #describe(traffic)
-table(with(traffic,state,year))
+table(with(data,state,year))
+str(traffic)
+describe(traffic)
 ```
 
 ```{r}
@@ -109,32 +113,87 @@ b9 <- traffic %>% ggplot(aes(factor(year),wkndfatrte)) + geom_boxplot() + ggtitl
 
 grid.arrange(b1,b2,b3,b4,b5,b6,b7,b8,b9, nrow = 3, ncol = 3, top = quote("Traffic Fatalities by Year: 1980-2004"))
 ```
-The number of fatalities across total, night and weekend look mostly unchanged over the years. However, when looking at noramlized fatality rates, there are obvious downward trends. 
+The number of fatalities across total, night and weekend look mostly unchanged over the years. However, when looking at noramlized fatality rates, there are obvious downward trends at the national level. 
 
+```{r}
+head(traffic, 5)
+```
 
+Let's also look at the scatterplot matrix between key continuous variable and our dependent variable *totfatrte*
+```{r}
+pairs(~totfatrte+statepop+perc14_24+unem+vehicmilespc, data=traffic, lower.panel=panel.smooth)
+```
+
+It doesn't seem like these variables need transformation since we didn't observe any nonlinear correaltion. 
 
 2. How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a very simple regression model of totfatrte on dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
 
-The dependent variable of interest *totfatrte* is total fatalities per 100,000 population. The average total fatality rate shows a downward trend from 25 per 100,000 residents in 1980 to 17 in 2004. There's a steep drop from 1980 to 1983 and then from 1988 to 1992.
+The dependent variable of interest *totfatrte* is total fatalities per 100,000 population. 
 ```{r}
 plot(aggregate(traffic['totfatrte'], list(traffic$year), mean))
 ```
 
+The average total fatality rate shows a downward trend from 25 per 100,000 residents in 1980 to 17 in 2004. There's a steep drop from 1980 to 1983 and then from 1988 to 1992.
+
 ```{r}
-m1 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04, data=traffic)
+m1 <- lm(totfatrte ~ d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04, data=traffic)
 summary(m1)
+plot(m1)
 ```
-This model suggests that time was a statistically significant variable at the 1% signifiance level every year except 1981. 
+
+[Shan: I took out d81 because it will give the model high collinearity. d81 is linearly dependent with all the rest year dummies]
+
+This model suggests that time was a statistically significant variable at the 1% signifiance level every year with negative coefficients. Since the baseline is 1981, we see strong evidence that drivers become safer over the years. 
 
 3. Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
 
+```{r}
+m2 <- lm(totfatrte ~ d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=traffic)
+summary(m2)
+plot(m2)
+```
+
+No transformation was needed for the continuous variables since 1) they are normalized and 2) they don't demonstrate obvious non-linear relationship with the dependent variable. 
+
+*bac8* and *bac10* are defined to denote the blood alcohol content allowed by each state, with "bac08" representing 8% and "bac10" representing 10%. They are not strictly binary and the fraction denotes the fraction of time that the policy was imposed, just like the other "binary" variables" for the other traffic laws. 
+
+The coefficient for bac8 is -2.50 and bac10 -1.14. This means that with all other variables held constant, the fatality rate drops by 2.50 if 8% alchohol content is allowed and it's enforced 100% of the time. Similarly, the fatality rate drops by 1.14 if 10% alchohol content is allowed and it's enforced 100% of the time. Both coefficients are statistically significant. 
+
+Per se law seemed to have a significant negative effect on fatality rate with 95% confidence level. But the primamry seat belt law doesn't seem to have a significant impact of the fatality rate. 
+
 4. Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
+
+```{r}
+traffic.panel <- plm.data(traffic, c("state", "year"))
+
+m3.fe <- plm(totfatrte ~d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=traffic.panel, model = "within")
+
+summary(m3.fe)
+```
+
+The coefficients for bac08 and bac10 became less negative yet those for perse and sbprim become more pronounced. The p-value for perse and sbprim also decreased, implying strong statistical significance (at 99.9% confidence level). 
+
+I think the exstimes from this fixed effects model are more reliable since it controls for not just year-level but also state-level unobserved effect. 
+
+On top of the typical CLM assumptions, the pooled effects assumption is that the individual-specific effects are uncorrelated with the independent variables for the estimates to be unbiased. 
+
+But the fixed effect model is robust even when the individual-specific effects are correlated with the independent variables.
 
 5. Suppose that *vehicmilespc*, the number of miles driven per capita, increases by 1,000. Using the FE estimates, what is the estimated effect on totfatrte? Please interpret the estimate as if explaining to a layperson.
 
+Since the coefficient is 0.000928, an increase by 1,000 indicates that, with all other variables held constant, the fatality rate will go up by 0.928. In simple English, with all other variables being the same, a 1000 miles increase in the number of miles driven per captia will increase the fatality rate by 0.928. 
+
 6. If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the coefficient estimates and their standard errors?
 
+```{r}
+plot(m3.fe.res)
+acf(m3.fe.res)
+pacf(m3.fe.res)
+```
 
+If there is existence of heteroskedasticity, then our estimates would not be consistent. From the plot of the residuals, our model seems robust against heteroskedasticity. 
+
+If there existed postive serial correlation in the model errors, we would have underestimated the p-values of our estimates. From the acf and pacf plots, we see evidence of postive serial correlation between our residuals. 
 
 
 
