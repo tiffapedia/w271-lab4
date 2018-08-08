@@ -70,10 +70,9 @@ traffic <- data
 #describe(traffic)
 table(with(data,state,year))
 str(traffic)
-describe(traffic)
 ```
 
-```{r}
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
 
 d1 <- traffic %>% ggplot(aes(totfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total")
 
@@ -97,7 +96,7 @@ grid.arrange(d1, d2, d3, d4, d5, d6, d7, d8, d9, nrow = 3, ncol = 3, top = quote
 ```
 All fatality variables skew right, with the skew most apparent when not normalized by population or by mileage. 
 
-```{r}
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
 t <- theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank())
@@ -120,7 +119,7 @@ head(traffic, 5)
 ```
 
 Let's also look at the scatterplot matrix between key continuous variable and our dependent variable *totfatrte*
-```{r}
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
 pairs(~totfatrte+statepop+perc14_24+unem+vehicmilespc, data=traffic, lower.panel=panel.smooth)
 ```
 
@@ -129,13 +128,13 @@ It doesn't seem like these variables need transformation since we didn't observe
 2. How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a very simple regression model of totfatrte on dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
 
 The dependent variable of interest *totfatrte* is total fatalities per 100,000 population. 
-```{r}
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
 plot(aggregate(traffic['totfatrte'], list(traffic$year), mean))
 ```
 
 The average total fatality rate shows a downward trend from 25 per 100,000 residents in 1980 to 17 in 2004. There's a steep drop from 1980 to 1983 and then from 1988 to 1992.
 
-```{r}
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
 m1 <- lm(totfatrte ~ d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04, data=traffic)
 summary(m1)
 plot(m1)
@@ -147,7 +146,7 @@ This model suggests that time was a statistically significant variable at the 1%
 
 3. Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
 
-```{r}
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
 m2 <- lm(totfatrte ~ d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=traffic)
 summary(m2)
 plot(m2)
@@ -185,10 +184,10 @@ Since the coefficient is 0.000928, an increase by 1,000 indicates that, with all
 
 6. If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the coefficient estimates and their standard errors?
 
-```{r}
-plot(m3.fe.res)
-acf(m3.fe.res)
-pacf(m3.fe.res)
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
+plot(m3.fe$residuals)
+acf(m3.fe$residuals)
+pacf(m3.fe$residuals)
 ```
 
 If there is existence of heteroskedasticity, then our estimates would not be consistent. From the plot of the residuals, our model seems robust against heteroskedasticity. 
