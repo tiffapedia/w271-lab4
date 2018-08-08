@@ -6,49 +6,54 @@ output:
   pdf_document: default
 ---
 
-# Instructions:
-
-*  **Due Date: 8/10/2018 (11:59 p.m. PST)**
-*  **Late work will not be accepted.**
-*  **Page limit: 12 pages (Anything after page 12 will not be graded)**
-
-```{r}
+```{r message=FALSE}
 # Load libraries
-library(knitr)
 library(car)
 library(dplyr)
 library(Hmisc)
 library(ggplot2)
-library(lattice)
-library(plm)
 library(grid)
 library(gridExtra)
-opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+library(knitr)
+library(plm)
+# prevent source code from running off the page
+opts_chunk$set(tidy.opts=list(width.cutoff=70), tidy=TRUE)
+# remove all objects from current workspace
+rm(list = ls())
+# set seed number to reproduce results
+set.seed(1)
+# load data
+load("data/driving.RData")
 ```
 
 # Description of the Lab
 
-In this lab, you are asked to answer the question **"Do changes in traffic laws affect traffic fatalities?"**  To do so, you will conduct the tasks specified below using the data set *driving.Rdata*, which includes 25 years of data that cover changes in various state drunk driving, seat belt, and speed limit laws. 
+In this lab, you are asked to answer the question **"Do changes in data laws affect data fatalities?"**  To do so, you will conduct the tasks specified below using the data set *driving.Rdata*, which includes 25 years of data that cover changes in various state drunk driving, seat belt, and speed limit laws. 
 
-Specifically, this data set contains data for the 48 continental U.S. states from 1980 through 2004. Various driving laws are indicated in the data set, such as the alcohol level at which drivers are considered legally intoxicated. There are also indicators for “per se” laws—where licenses can be revoked without a trial—and seat belt laws. A few economics and demographic variables are also included. The description of the each of the variables in the dataset is come with the dataste.
+Specifically, this data set contains data for the 48 continental U.S. states from 1980 through 2004. Various driving laws are indicated in the data set, such as the alcohol level at which drivers are considered legally intoxicated. There are also indicators for “per se” laws—where licenses can be revoked without a trial—and seat belt laws. A few economics and demographic variables are also included. The description of the each of the variables in the dataset is come with the dataset.
 
 **Exercises:**
 
 1. Load the data. Provide a description of the basic structure of the dataset, as we have done in throughout the semester. Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable *totfatrte* and the potential explanatory variables. You need to write a detailed narrative of your observations of your EDA. *Reminder: giving an "output dump" (i.e. providing a bunch of graphs and tables without description and hoping your audience will interpret them) will receive zero point in this exercise.*
 
-This dataset contains 1200 observations of 56 variables that spans across 25 years from 1980 to 2004. There is a year column, as well as 25 dummy variables corresponding to each year. The dataset contains data for 48 continental U.S. states and each state is numbered from 1 to 51 with 2, 9 and 12 missing. Remaining columns hold variables related to state's traffic laws, traffic fatalities, and population demographics. Below we list the variables, their definitions and their values:
+```{r}
+table(with(data,state,year))
+str(data)
+```
 
-*Traffic Laws*
+This dataset contains 1200 observations of 56 variables that spans across 25 years from 1980 to 2004. There is a year column, as well as 25 dummy variables corresponding to each year. The dataset contains data for 48 continental U.S. states and each state is numbered from 1 to 51 with 2, 9 and 12 missing. Remaining columns hold variables related to state's data laws, data fatalities, and population demographics. Below we list the variables, their definitions and their values:
+
+*data Laws*
 - "sl*" variables correspond to the speed limit mandated by the state in a given year. For example, "sl55" relates to whether or not a state had a 55 mph speed limit. Values range from 0 to 1, with fractions representing the amount of time for which the limit was enforced by law that year given a change in state law. 
 - "seatbelt" consists of values 0, 1 and 2 with 0 being no seatbelt law, 1 being primary (no other violation required to give a ticket), and 2 being secondary (additional violated required for a ticket). Dummy variables, "sbprim" and "sbsecon", also signify the the same thing. 
 
-*Alcohol-Related Traffic Laws*
+*Alcohol-Related data Laws*
 - "minage" is the minimum drinking age, with values from 18-21 and the majority being 21 years old. 
 - "zerotol" indiciates whether or not a state enacted a Zero Tolerance policy for drinking that makes it a criminal offense when drivers under the age of 21 drive with even a small amount of alcohol in their system. Values under this column consist mostly of 0's and 1's with occasional fractions. 
 - "bac" columns denote the blood alcohol content allowed by each state, with "bac08" representing 8% and "bac10" representing 10%.
 - "perse" relates to "Per se" laws in DUI cases. This law establishes that once an individual is shown to have a BAC at or above the state's allowed percent, that person is considered intoxicated by law. Such laws allow a person to be established as impaired without on-scene evaluation such as sobriety testing. Values range from 0 to 1, with fractions representing the amount of time for which the limit was enforced by law that year given a change in state law. 
-*Traffic Fatalities*
-- totfat: total traffic fatalities
+*data Fatalities*
+- totfat: total data fatalities
 - nghtfat: total nighttime fatalities
 - wkndfat: total weekend fatalities
 - totfatpvm: total fatalities per 100 million miles
@@ -64,63 +69,42 @@ This dataset contains 1200 observations of 56 variables that spans across 25 yea
 - unem: unemployment rate, percent
 - perc14_24: percent population aged 14 through 24
 
-```{r}
-load("data/driving.RData")
-traffic <- data
-#describe(traffic)
-table(with(data,state,year))
-str(traffic)
-```
-
 ```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
-
-d1 <- traffic %>% ggplot(aes(totfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total")
-
-d2 <- traffic %>% ggplot(aes(nghtfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night")
-
-d3 <- traffic %>% ggplot(aes(wkndfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend")
-
-d4 <- traffic %>% ggplot(aes(totfatpvm)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total/Mile Driven")
-
-d5 <- traffic %>% ggplot(aes(nghtfatpvm)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night/Mile Driven")
-
-d6 <- traffic %>% ggplot(aes(wkndfatpvm)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend/Mile Driven")
-
-d7 <- traffic %>% ggplot(aes(totfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total Per Capita")
-
-d8 <- traffic %>% ggplot(aes(nghtfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night Per Capita")
-
-d9 <- traffic %>% ggplot(aes(wkndfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend Per Capita")
-
-grid.arrange(d1, d2, d3, d4, d5, d6, d7, d8, d9, nrow = 3, ncol = 3, top = quote("Traffic Fatalities"))
+d1 <- data %>% ggplot(aes(totfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total")
+d2 <- data %>% ggplot(aes(nghtfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night")
+d3 <- data %>% ggplot(aes(wkndfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend")
+d4 <- data %>% ggplot(aes(totfatpvm)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total/Mile Driven")
+d5 <- data %>% ggplot(aes(nghtfatpvm)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night/Mile Driven")
+d6 <- data %>% ggplot(aes(wkndfatpvm)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend/Mile Driven")
+d7 <- data %>% ggplot(aes(totfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total Per Capita")
+d8 <- data %>% ggplot(aes(nghtfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night Per Capita")
+d9 <- data %>% ggplot(aes(wkndfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend Per Capita")
+grid.arrange(d1, d2, d3, d4, d5, d6, d7, d8, d9, nrow = 3, ncol = 3, top = quote("data Fatalities"))
 ```
+
 All fatality variables skew right, with the skew most apparent when not normalized by population or by mileage. 
 
 ```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
 t <- theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank())
-b1 <- traffic %>% ggplot(aes(factor(year), totfat)) + geom_boxplot()  + ggtitle("Total") +t
-b2 <- traffic %>% ggplot(aes(factor(year), nghtfat)) + geom_boxplot()  + ggtitle("Night") +t
-b3 <- traffic %>% ggplot(aes(factor(year), wkndfat)) + geom_boxplot() + ggtitle("Weekend") +t
-b4 <- traffic %>% ggplot(aes(factor(year), totfatpvm)) + geom_boxplot() + ggtitle("Total/Mile Driven") +t
-b5 <- traffic %>% ggplot(aes(factor(year),nghtfatpvm)) + geom_boxplot() + ggtitle("Night/Mile Driven") +t
-b6 <- traffic %>% ggplot(aes(factor(year),wkndfatpvm)) + geom_boxplot() + ggtitle("Weekend/Mile Driven") +t
-b7 <- traffic %>% ggplot(aes(factor(year),totfatrte)) + geom_boxplot() + ggtitle("Total Per Capita") +t
-b8 <- traffic %>% ggplot(aes(factor(year),nghtfatrte)) + geom_boxplot() + ggtitle("Night Per Capita") +t
-b9 <- traffic %>% ggplot(aes(factor(year),wkndfatrte)) + geom_boxplot() + ggtitle("Weekend Per Capita") +t
+b1 <- data %>% ggplot(aes(factor(year), totfat)) + geom_boxplot()  + ggtitle("Total") +t
+b2 <- data %>% ggplot(aes(factor(year), nghtfat)) + geom_boxplot()  + ggtitle("Night") +t
+b3 <- data %>% ggplot(aes(factor(year), wkndfat)) + geom_boxplot() + ggtitle("Weekend") +t
+b4 <- data %>% ggplot(aes(factor(year), totfatpvm)) + geom_boxplot() + ggtitle("Total/Mile Driven") +t
+b5 <- data %>% ggplot(aes(factor(year),nghtfatpvm)) + geom_boxplot() + ggtitle("Night/Mile Driven") +t
+b6 <- data %>% ggplot(aes(factor(year),wkndfatpvm)) + geom_boxplot() + ggtitle("Weekend/Mile Driven") +t
+b7 <- data %>% ggplot(aes(factor(year),totfatrte)) + geom_boxplot() + ggtitle("Total Per Capita") +t
+b8 <- data %>% ggplot(aes(factor(year),nghtfatrte)) + geom_boxplot() + ggtitle("Night Per Capita") +t
+b9 <- data %>% ggplot(aes(factor(year),wkndfatrte)) + geom_boxplot() + ggtitle("Weekend Per Capita") +t
 
-grid.arrange(b1,b2,b3,b4,b5,b6,b7,b8,b9, nrow = 3, ncol = 3, top = quote("Traffic Fatalities by Year: 1980-2004"))
+grid.arrange(b1,b2,b3,b4,b5,b6,b7,b8,b9, nrow = 3, ncol = 3, top = quote("data Fatalities by Year: 1980-2004"))
 ```
-The number of fatalities across total, night and weekend look mostly unchanged over the years. However, when looking at noramlized fatality rates, there are obvious downward trends at the national level. 
-
-```{r}
-head(traffic, 5)
-```
+The number of fatalities across total, night and weekend look mostly unchanged over the years. However, when looking at normalized fatality rates, there are obvious downward trends at the national level. 
 
 Let's also look at the scatterplot matrix between key continuous variable and our dependent variable *totfatrte*
 ```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
-pairs(~totfatrte+statepop+perc14_24+unem+vehicmilespc, data=traffic, lower.panel=panel.smooth)
+pairs(~totfatrte+statepop+perc14_24+unem+vehicmilespc, data=data, lower.panel=panel.smooth)
 ```
 
 It doesn't seem like these variables need transformation since we didn't observe any nonlinear correaltion. 
@@ -129,13 +113,13 @@ It doesn't seem like these variables need transformation since we didn't observe
 
 The dependent variable of interest *totfatrte* is total fatalities per 100,000 population. 
 ```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
-plot(aggregate(traffic['totfatrte'], list(traffic$year), mean))
+plot(aggregate(data['totfatrte'], list(data$year), mean))
 ```
 
 The average total fatality rate shows a downward trend from 25 per 100,000 residents in 1980 to 17 in 2004. There's a steep drop from 1980 to 1983 and then from 1988 to 1992.
 
 ```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
-m1 <- lm(totfatrte ~ d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04, data=traffic)
+m1 <- lm(totfatrte ~ d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04, data=data)
 summary(m1)
 plot(m1)
 ```
@@ -147,14 +131,14 @@ This model suggests that time was a statistically significant variable at the 1%
 3. Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
 
 ```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
-m2 <- lm(totfatrte ~ d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=traffic)
+m2 <- lm(totfatrte ~ d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=data)
 summary(m2)
 plot(m2)
 ```
 
 No transformation was needed for the continuous variables since 1) they are normalized and 2) they don't demonstrate obvious non-linear relationship with the dependent variable. 
 
-*bac8* and *bac10* are defined to denote the blood alcohol content allowed by each state, with "bac08" representing 8% and "bac10" representing 10%. They are not strictly binary and the fraction denotes the fraction of time that the policy was imposed, just like the other "binary" variables" for the other traffic laws. 
+*bac8* and *bac10* are defined to denote the blood alcohol content allowed by each state, with "bac08" representing 8% and "bac10" representing 10%. They are not strictly binary and the fraction denotes the fraction of time that the policy was imposed, just like the other "binary" variables" for the other data laws. 
 
 The coefficient for bac8 is -2.50 and bac10 -1.14. This means that with all other variables held constant, the fatality rate drops by 2.50 if 8% alchohol content is allowed and it's enforced 100% of the time. Similarly, the fatality rate drops by 1.14 if 10% alchohol content is allowed and it's enforced 100% of the time. Both coefficients are statistically significant. 
 
@@ -163,9 +147,9 @@ Per se law seemed to have a significant negative effect on fatality rate with 95
 4. Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
 
 ```{r}
-traffic.panel <- plm.data(traffic, c("state", "year"))
+data.panel <- plm.data(data, c("state", "year"))
 
-m3.fe <- plm(totfatrte ~d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=traffic.panel, model = "within")
+m3.fe <- plm(totfatrte ~d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=data.panel, model = "within")
 
 summary(m3.fe)
 ```

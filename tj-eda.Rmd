@@ -1,0 +1,97 @@
+---
+title: "W271 Lab 4"
+author: "Tiffany Jaya, Joanna Huang, Shan He, Robert Deng"
+output: 
+  pdf_document:
+  toc: true
+  number_sections: true
+fontsize: 11pt
+geometry: margin=1in
+---
+
+
+```{r}
+# Load libraries
+library(knitr)
+library(car)
+library(dplyr)
+library(Hmisc)
+library(ggplot2)
+library(lattice)
+library(plm)
+library(grid)
+library(gridExtra)
+# prevent source code from running off the page
+opts_chunk$set(tidy.opts=list(width.cutoff=70), tidy=TRUE)
+# remove all objects from current workspace
+rm(list = ls())
+# set seed number to reproduce results
+set.seed(1)
+# load data
+load("data/driving.RData")
+```
+
+1. Load the data. Provide a description of the basic structure of the dataset, as we have done in throughout the semester. Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable *totfatrte* and the potential explanatory variables. You need to write a detailed narrative of your observations of your EDA. *Reminder: giving an "output dump" (i.e. providing a bunch of graphs and tables without description and hoping your audience will interpret them) will receive zero point in this exercise.*
+
+```{r}
+data
+```
+
+```{r}
+norm_hist <- function(data.ts, data2.ts=NULL, br=30) {
+  if (!is.null(data2.ts)){
+    par(mfrow=c(1, 2))
+  }
+  h <- hist(data.ts, col=rgb(6/255, 57/255, 126/255, 0.4), lwd = 2, breaks = br)
+  xfit <- seq(min(data.ts), max(data.ts), length = 40) 
+  yfit <- dnorm(xfit, mean = mean(data.ts), sd = sd(data.ts)) 
+  yfit <- yfit * diff(h$mids[1:2]) * length(data.ts) 
+  lines(xfit, yfit, col = rgb(199/255, 37/255, 4/255, 0.5), lwd = 2)
+  
+  if (!is.null(data2.ts)){
+    h <- hist(data2.ts, col=rgb(6/255, 57/255, 126/255, 0.4), breaks=br)
+    xfit <- seq(min(data2.ts), max(data2.ts), length = 40)
+    yfit <- dnorm(xfit, mean = mean(data2.ts), sd = sd(data2.ts))
+    yfit <- yfit * diff(h$mids[1:2]) * length(data2.ts)
+
+    lines(xfit, yfit, col = rgb(199/255, 37/255, 4/255, 0.5), lwd = 2)
+  }
+}
+
+norm_hist(data$totfatrte, data$totfat)
+
+scatterplot(totfatrte ~ year|state, boxplots=FALSE, smooth=TRUE,
+                             reg.line=FALSE, data=data, legend.columns=12,
+                             xlab="Year", ylab="Total Fatalities per 100k Population",
+                             main="Total Fatalities per 100k Pop by State (1980 - 2004")
+```
+
+
+2. How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a very simple regression model of totfatrte on dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
+
+```{r}
+
+```
+
+
+3. Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
+
+```{r}
+
+```
+
+
+4. Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
+
+```{r}
+
+```
+
+
+5. Suppose that *vehicmilespc*, the number of miles driven per capita, increases by 1,000. Using the FE estimates, what is the estimated effect on totfatrte? Please interpret the estimate as if explaining to a layperson.
+
+```{r}
+
+```
+
+6. If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the coefficient estimates and their standard errors?
