@@ -1,29 +1,35 @@
 ---
-title: "W271: Lab 4"
-author: "Tiffany Jaya, Joanna Huang, Robert Deng, Shan He"
-date: "August 10, 2018"
-output:
-  pdf_document: default
+title: "W271 Lab 4"
+author: "Shan He, Joanna Huang, Tiffany Jaya, Robert Deng"
+output: 
+  pdf_document:
+  toc: true
+  number_sections: true
+fontsize: 11pt
+geometry: margin=1in
 ---
 
-# Instructions:
 
-*  **Due Date: 8/10/2018 (11:59 p.m. PST)**
-*  **Late work will not be accepted.**
-*  **Page limit: 12 pages (Anything after page 12 will not be graded)**
-
-```{r}
+```{r message=FALSE}
 # Load libraries
 library(knitr)
 library(car)
 library(dplyr)
 library(Hmisc)
+library(gplots)
 library(ggplot2)
 library(lattice)
 library(plm)
 library(grid)
 library(gridExtra)
-opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+# prevent source code from running off the page
+opts_chunk$set(tidy.opts=list(width.cutoff=70), tidy=TRUE)
+# remove all objects from current workspace
+rm(list = ls())
+# set seed number to reproduce results
+set.seed(1)
+# load data
+load("data/driving.RData")
 ```
 
 # Introduction
@@ -35,9 +41,7 @@ Source: https://www.nsc.org/road-safety/safety-topics/fatality-estimates, https:
 
 ```{r}
 load("data/driving.RData")
-traffic <- data
-describe(traffic)
-table(with(data,state,year))
+unique(data$state)
 ```
 
 This dataset contains 1200 observations of 56 variables that spans across 25 years from 1980 to 2004. There is a year column, as well as 25 dummy variables corresponding to each year. The dataset contains data for 48 continental U.S. states and each state is numbered from 1 to 51 with 2, 9 and 12 missing. Remaining columns hold variables related to state's traffic laws, traffic fatalities, and population demographics. Below we list the variables, their definitions and their values:
@@ -63,60 +67,49 @@ Fatality statistics are recorded for each state over the 25-year period. The sta
 In addition to the traffic laws and fatalities, this dataset contains demographic information including state population, unemployment rate, and percentage of population between the age 14 and 24. Also included are total vehicle miles driven (in billions) and per capita. 
 
 # EDA
-```{r}
-d1 <- traffic %>% ggplot(aes(totfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total")
-
-d2 <- traffic %>% ggplot(aes(nghtfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night")
-
-d3 <- traffic %>% ggplot(aes(wkndfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend")
-
-d4 <- traffic %>% ggplot(aes(totfatpvm)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total/Mile Driven")
-
-d5 <- traffic %>% ggplot(aes(nghtfatpvm)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night/Mile Driven")
-
-d6 <- traffic %>% ggplot(aes(wkndfatpvm)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend/Mile Driven")
-
-d7 <- traffic %>% ggplot(aes(totfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total Per Capita")
-
-d8 <- traffic %>% ggplot(aes(nghtfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night Per Capita")
-
-d9 <- traffic %>% ggplot(aes(wkndfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend Per Capita")
-
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
+d1 <- data %>% ggplot(aes(totfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total")
+d2 <- data %>% ggplot(aes(nghtfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night")
+d3 <- data %>% ggplot(aes(wkndfat)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend")
+d4 <- data %>% ggplot(aes(totfatpvm)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total/Mile Driven")
+d5 <- data %>% ggplot(aes(nghtfatpvm)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night/Mile Driven")
+d6 <- data %>% ggplot(aes(wkndfatpvm)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend/Mile Driven")
+d7 <- data %>% ggplot(aes(totfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total Per Capita")
+d8 <- data %>% ggplot(aes(nghtfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night Per Capita")
+d9 <- data %>% ggplot(aes(wkndfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend Per Capita")
 grid.arrange(d1, d2, d3, d4, d5, d6, d7, d8, d9, nrow = 3, ncol = 3, top = quote("Traffic Fatalities"))
 ```
 All fatality variables skew right, with the skew most apparent when not normalized by population or by mileage. We may consider taking the log of the fatalities given the values are always positive and have a meaningful zero point. When comparing how a log transformation affects these variables, $totfatpvm$,$nghtfatpvm$ and $wkndfatpvm$ respond most favorably to the log transformation
 
-```{r}
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
 t <- theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank())
-b1 <- traffic %>% ggplot(aes(factor(year), totfat)) + geom_boxplot()  + ggtitle("Total") +t
-b2 <- traffic %>% ggplot(aes(factor(year), nghtfat)) + geom_boxplot()  + ggtitle("Night") +t
-b3 <- traffic %>% ggplot(aes(factor(year), wkndfat)) + geom_boxplot() + ggtitle("Weekend") +t
-b4 <- traffic %>% ggplot(aes(factor(year), totfatpvm)) + geom_boxplot() + ggtitle("Total/Mile Driven") +t
-b5 <- traffic %>% ggplot(aes(factor(year),nghtfatpvm)) + geom_boxplot() + ggtitle("Night/Mile Driven") +t
-b6 <- traffic %>% ggplot(aes(factor(year),wkndfatpvm)) + geom_boxplot() + ggtitle("Weekend/Mile Driven") +t
-b7 <- traffic %>% ggplot(aes(factor(year),totfatrte)) + geom_boxplot() + ggtitle("Total Per Capita") +t
-b8 <- traffic %>% ggplot(aes(factor(year),nghtfatrte)) + geom_boxplot() + ggtitle("Night Per Capita") +t
-b9 <- traffic %>% ggplot(aes(factor(year),wkndfatrte)) + geom_boxplot() + ggtitle("Weekend Per Capita") +t
-
+b1 <- data %>% ggplot(aes(factor(year), totfat)) + geom_boxplot()  + ggtitle("Total") +t
+b2 <- data %>% ggplot(aes(factor(year), nghtfat)) + geom_boxplot()  + ggtitle("Night") +t
+b3 <- data %>% ggplot(aes(factor(year), wkndfat)) + geom_boxplot() + ggtitle("Weekend") +t
+b4 <- data %>% ggplot(aes(factor(year), totfatpvm)) + geom_boxplot() + ggtitle("Total/Mile Driven") +t
+b5 <- data %>% ggplot(aes(factor(year),nghtfatpvm)) + geom_boxplot() + ggtitle("Night/Mile Driven") +t
+b6 <- data %>% ggplot(aes(factor(year),wkndfatpvm)) + geom_boxplot() + ggtitle("Weekend/Mile Driven") +t
+b7 <- data %>% ggplot(aes(factor(year),totfatrte)) + geom_boxplot() + ggtitle("Total Per Capita") +t
+b8 <- data %>% ggplot(aes(factor(year),nghtfatrte)) + geom_boxplot() + ggtitle("Night Per Capita") +t
+b9 <- data %>% ggplot(aes(factor(year),wkndfatrte)) + geom_boxplot() + ggtitle("Weekend Per Capita") +t
 grid.arrange(b1,b2,b3,b4,b5,b6,b7,b8,b9, nrow = 3, ncol = 3, top = quote("Traffic Fatalities by Year: 1980-2004"))
 ```
 The number of fatalities across total, night and weekend look mostly unchanged over the years. However, when looking at noramlized fatality rates, there are obvious downward trends at the national level. 
 
 Next, we look at how demographics differ between states. 
-```{r}
-traffic.panel <- plm.data(traffic, c("state", "year"))
-library(gplots)
-plotmeans(statepop ~ state, main="State Population Across States", data=traffic.panel)
-plotmeans(unem ~ state, main="Unemployment Across States", data=traffic.panel)
-plotmeans(perc14_24 ~ state, main="% Population Aged 14-24 Across States", data=traffic.panel)
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide', warning=FALSE}
+data.panel <- plm.data(data, c("state", "year"))
+plotmeans(statepop ~ state, main="State Population Across States", data=data.panel)
+plotmeans(unem ~ state, main="Unemployment Across States", data=data.panel)
+plotmeans(perc14_24 ~ state, main="% Population Aged 14-24 Across States", data=data.panel)
 ```
 There are obvious differences in population across states with state 5, 33 and 44 standing out with 15 million+ population sizes compared to the average 5,329,896. Looking at unemployment rates, which average around 6%, state 28 and 42 demonstrate the lowest unemployment rates at less than 4% while state 49 demonstrates the highest with a median of 9. Percentage of population that is between the age of 14-24 also vary across state, with state 9 showing a low of 13.4% and state 45 showing a high of 18+%. Such variability in the demographics information shows how each state differs considerably from the other and how additional unobserved differences may be present. 
 
 Let's also look at the scatterplot matrix between key continuous variable and our dependent variable *totfatrte*
-```{r}
-pairs(~totfatrte+statepop+perc14_24+unem+vehicmilespc, data=traffic, lower.panel=panel.smooth)
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
+pairs(~totfatrte+statepop+perc14_24+unem+vehicmilespc, data=data, lower.panel=panel.smooth)
 ```
 
 It doesn't seem like these variables need transformation since we didn't observe any nonlinear correlation. 
@@ -124,33 +117,34 @@ It doesn't seem like these variables need transformation since we didn't observe
 # Modeling
 2. How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a very simple regression model of totfatrte on dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
 
-The dependent variable of interest *totfatrte* is total fatalities per 100,000 population. 
-```{r}
-averages <- aggregate(traffic['totfatrte'], list(traffic$year), mean)
-averages
-plot(aggregate(traffic['totfatrte'], list(traffic$year), mean), main = 'Total Fatality Rate Averages 1981-2004', xlab='Year', ylab='Total Fatality Rate')
-text(averages$Group.1, averages$totfatrte, labels=round(averages$totfatrte,1),pos=1, cex=.75)
+Our dependent variable *totfatrte* is defined as total fatalities per 100,000 population. Its average per year are listed below.
+
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
+(totfatrte.avg.per.year <- aggregate(list(totfatrte.avg.per.year=data$totfatrte), by=list(year=data$year), FUN=mean))
+plot(totfatrte.avg.per.year)
 ```
 
-The average total fatality rate shows a downward trend from 25.5 per 100,000 residents in 1980 to 16.7 in 2004. There's a steep drop from 1980 to 1983 and then from 1988 to 1992.
+There is a noticeable downward trend with steep declines occuring twice: once from 1980 to 1983 and another one from 1988 to 1992. 
 
-```{r}
-m1 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04, data=traffic)
+```{r fig.show='hold', fig.align='center', out.width='49%'}
+dummy.1981.to.2004 <- c(paste('d',  seq(81, 99, by=1), sep=''), 
+                        paste('d0', seq(00, 04, by=1), sep=''))
+m1 <- lm(data$totfatrte ~ ., data=data[dummy.1981.to.2004])
 summary(m1)
-plot(m1)
 ```
 
-[Shan: I took out d81 because it will give the model high collinearity. d81 is linearly dependent with all the rest year dummies] -Joanna: putting back d81 for #2 because the instructions explicity say to use the dummy variables for 1981 to 2004.]
+With 1980 as the base year, the intercept represents total fatality rate in that year. We can see that the intercept value 25.5 matches that of the average total fatality rate in 1980 (calculated in the first part of this question). In 1981, the estimated total fatality rate is 25.5 - 1.8(1), which equals 23.7 and so forth. Therefore, the fitted regression equation is $\text{totfatrte.avg.per.year} = 25.5 -1.8\cdot d81 -4.6\cdot d82-5.3\cdot d83-5.2\cdot d84-5.6\cdot d85-4.7\cdot d86-4.7\cdot d87-4.6\cdot d88-6.0\cdot d90-7.4\cdot d91-8.3\cdot d92-8.4\cdot d93-8.3\cdot d94-7.8\cdot d95-8.1\cdot d96-7.9\cdot d97-8.2\cdot d98-8.2\cdot d99-8.7\cdot d00-8.7\cdot d01-8.5\cdot d02-8.7\cdot d03-8.8\cdot d04$. In other words, the model explains the average difference in the yearly fatalities as compared to the baseline year of 1980. 
 
-With 1980 as the base year, the intercept represents total fatality rate in that year. We can see that the intercept value 25.5 matches that of the average total fatality rate in 1980 (calculated in the first part of this question). In 1981, the estimated total fatality rate is 25.5 -1.8(1), which equals 23.7 and so forth. Therefore the fitted regression equation is 
-$average_fatrte = 25.5 -1.82\cdot d81 -4.6\cdot d82-5.3\cdot d83-5.2\cdot d84-5.6\cdot d85-4.7\cdot d86-4.7\cdot d87-4.6\cdot d88-6.0\cdot d90-7.4\cdot d91-8.3\cdot d92-8.4\cdot d93-8.3\cdot d94-7.8\cdot d95-8.1\cdot d96-7.9\cdot d97-8.2\cdot d98-8.2\cdot d99-8.7\cdot d00-8.7\cdot d01-8.5\cdot d02-8.7\cdot d03-8.8\cdot d04$ The negative coefficients represent a decrease in average fatality rate each year relative to 1980. Since the coefficients for the year dummy variables (except for 1981) are statistically significant at the 1% significance level, we see strong evidence that drivers become safer over the years. 
+The negative coefficients represent a decrease in average fatality rate each year relative to 1980. Since the coefficients for the year dummy variables (except for 1981) are statistically significant at the 1% significance level, we see strong evidence that drivers become safer over the years. 
 
 3. Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
 
-```{r}
-m2 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=traffic)
+```{r fig.show='hold', fig.align='center', out.width='49%'}
+explanatory_vars <- c('bac08', 'bac10', 'perse', 'sbprim', 
+                      'sbsecon', 'sl70plus', 'gdl', 'perc14_24', 
+                      'unem', 'vehicmilespc', dummy.1981.to.2004)
+m2 <- lm(data$totfatrte ~ ., data=data[explanatory_vars])
 summary(m2)
-plot(m2)
 ```
 
 No transformation was needed for the continuous variables since 1) they are normalized and 2) they don't demonstrate obvious non-linear relationship with the dependent variable. 
@@ -164,10 +158,7 @@ Per se law seemed to have a significant negative effect on fatality rate at the 
 4. Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
 
 ```{r}
-traffic.panel <- plm.data(traffic, c("state", "year"))
-
-m3.fe <- plm(totfatrte ~d81 +d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=traffic.panel, model = "within")
-
+m3.fe <- plm(totfatrte ~d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=plm.data(data, c('state', 'year')), model='within')
 summary(m3.fe)
 ```
 
@@ -178,7 +169,8 @@ Pooled OLS regression assumes that the fixed effects and idiosyncratic errors ar
 Fixed effects models, on the other hand, allow for persisting influence, such as state economy or perspectives on alcohol, to be correlated with the explanatory variables, and also eliminates such within-state heterogeneity. Therefore, the estimates from this fixed effects model are more reliable since it controls for not just year-level but also state-level unobserved effect. To further test whether this is true, we can use the pFtest.
 
 ```{r}
-pFtest(m3.fe, m2) # Testing for fixed effects, null: OLS better than fixed
+# Testing for fixed effects, null: OLS better than fixed
+pFtest(m3.fe, m2) 
 ```
 Since the p-value is less than .01 and statistically significant at the 1% level, we can reject the null that the pooled OLS regression is a better model than the fixed model. 
 
@@ -188,7 +180,7 @@ Since the coefficient is 0.000940, an increase by 1,000 indicates that, with all
 
 6. If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the coefficient estimates and their standard errors?
 
-```{r}
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
 plot(m3.fe$residuals)
 acf(m3.fe$residuals)
 pacf(m3.fe$residuals)
