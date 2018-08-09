@@ -41,7 +41,6 @@ Source: https://www.nsc.org/road-safety/safety-topics/fatality-estimates, https:
 
 ```{r}
 load("data/driving.RData")
-str(data)
 unique(data$state)
 ```
 
@@ -121,19 +120,17 @@ It doesn't seem like these variables need transformation since we didn't observe
 Our dependent variable *totfatrte* is defined as total fatalities per 100,000 population. Its average per year are listed below.
 
 ```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
-totfatrte.avg.per.year <- aggregate(list(totfatrte.avg.per.year=data$totfatrte), by=list(year=data$year), FUN=mean)
-knitr::kable(totfatrte.avg.per.year)
+(totfatrte.avg.per.year <- aggregate(list(totfatrte.avg.per.year=data$totfatrte), by=list(year=data$year), FUN=mean))
 plot(totfatrte.avg.per.year)
 ```
 
 There is a noticeable downward trend with steep declines occuring twice: once from 1980 to 1983 and another one from 1988 to 1992. 
 
-```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
+```{r fig.show='hold', fig.align='center', out.width='49%'}
 dummy.1981.to.2004 <- c(paste('d',  seq(81, 99, by=1), sep=''), 
                         paste('d0', seq(00, 04, by=1), sep=''))
 m1 <- lm(data$totfatrte ~ ., data=data[dummy.1981.to.2004])
 summary(m1)
-plot(m1)
 ```
 
 With 1980 as the base year, the intercept represents total fatality rate in that year. We can see that the intercept value 25.5 matches that of the average total fatality rate in 1980 (calculated in the first part of this question). In 1981, the estimated total fatality rate is 25.5 - 1.8(1), which equals 23.7 and so forth. Therefore, the fitted regression equation is $\text{totfatrte.avg.per.year} = 25.5 -1.8\cdot d81 -4.6\cdot d82-5.3\cdot d83-5.2\cdot d84-5.6\cdot d85-4.7\cdot d86-4.7\cdot d87-4.6\cdot d88-6.0\cdot d90-7.4\cdot d91-8.3\cdot d92-8.4\cdot d93-8.3\cdot d94-7.8\cdot d95-8.1\cdot d96-7.9\cdot d97-8.2\cdot d98-8.2\cdot d99-8.7\cdot d00-8.7\cdot d01-8.5\cdot d02-8.7\cdot d03-8.8\cdot d04$. In other words, the model explains the average difference in the yearly fatalities as compared to the baseline year of 1980. 
@@ -142,13 +139,12 @@ The negative coefficients represent a decrease in average fatality rate each yea
 
 3. Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
 
-```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
+```{r fig.show='hold', fig.align='center', out.width='49%'}
 explanatory_vars <- c('bac08', 'bac10', 'perse', 'sbprim', 
                       'sbsecon', 'sl70plus', 'gdl', 'perc14_24', 
                       'unem', 'vehicmilespc', dummy.1981.to.2004)
 m2 <- lm(data$totfatrte ~ ., data=data[explanatory_vars])
 summary(m2)
-plot(m2)
 ```
 
 No transformation was needed for the continuous variables since 1) they are normalized and 2) they don't demonstrate obvious non-linear relationship with the dependent variable. 
@@ -161,9 +157,8 @@ Per se law seemed to have a significant negative effect on fatality rate at the 
 
 4. Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
 
-```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
-data.panel <- plm.data(data, c("state", "year"))
-m3.fe <- plm(totfatrte ~d81 +d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=data.panel, model = "within")
+```{r}
+m3.fe <- plm(totfatrte ~d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=plm.data(data, c('state', 'year')), model = "within")
 summary(m3.fe)
 ```
 
@@ -174,7 +169,8 @@ Pooled OLS regression assumes that the fixed effects and idiosyncratic errors ar
 Fixed effects models, on the other hand, allow for persisting influence, such as state economy or perspectives on alcohol, to be correlated with the explanatory variables, and also eliminates such within-state heterogeneity. Therefore, the estimates from this fixed effects model are more reliable since it controls for not just year-level but also state-level unobserved effect. To further test whether this is true, we can use the pFtest.
 
 ```{r}
-pFtest(m3.fe, m2) # Testing for fixed effects, null: OLS better than fixed
+# Testing for fixed effects, null: OLS better than fixed
+pFtest(m3.fe, m2) 
 ```
 Since the p-value is less than .01 and statistically significant at the 1% level, we can reject the null that the pooled OLS regression is a better model than the fixed model. 
 
