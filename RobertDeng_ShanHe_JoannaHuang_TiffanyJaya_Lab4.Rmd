@@ -100,7 +100,7 @@ grid.arrange(b1,b2,b3,b4,b5,b6,b7,b8,b9, nrow = 3, ncol = 3, top = quote("data F
 The number of fatalities across total, night and weekend look mostly unchanged over the years. However, when looking at noramlized fatality rates, there are obvious downward trends at the national level. 
 
 Next, we look at how demographics differ between states. 
-```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide', warning=FALSE}
 data.panel <- plm.data(data, c("state", "year"))
 plotmeans(statepop ~ state, main="State Population Across States", data=data.panel)
 plotmeans(unem ~ state, main="Unemployment Across States", data=data.panel)
@@ -142,7 +142,7 @@ The negative coefficients represent a decrease in average fatality rate each yea
 
 3. Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
 
-```{r}
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
 explanatory_vars <- c('bac08', 'bac10', 'perse', 'sbprim', 
                       'sbsecon', 'sl70plus', 'gdl', 'perc14_24', 
                       'unem', 'vehicmilespc', dummy.1981.to.2004)
@@ -161,7 +161,7 @@ Per se law seemed to have a significant negative effect on fatality rate at the 
 
 4. Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
 
-```{r}
+```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
 data.panel <- plm.data(data, c("state", "year"))
 m3.fe <- plm(totfatrte ~d81 +d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=data.panel, model = "within")
 summary(m3.fe)
