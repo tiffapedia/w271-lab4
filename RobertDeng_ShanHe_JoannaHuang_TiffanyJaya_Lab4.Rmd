@@ -34,7 +34,7 @@ load("data/driving.RData")
 
 # Introduction
 
-According to the National Safety Council, data fatalities claimed 40,100 lives in 2017, 6% higher than the number of deaths in 2015. Alongside these death numbers are more than 4 million injuries that were a result of motor vehicle accidents. Furthermore, a fourth of those fatalities can be attributed to deaths from alcohol impaired driving. In this lab, we look into the general and alcohol-related data laws and demographic statistics of 48 continental U.S. states from 1980 through 2004 to answer the question **"Do changes in data laws affect data fatalities?"**  
+According to the National Safety Council, traffic fatalities claimed 40,100 lives in 2017, 6% higher than the number of deaths in 2015. Alongside these death numbers are more than 4 million injuries that were a result of motor vehicle accidents. Furthermore, a fourth of those fatalities can be attributed to deaths from alcohol impaired driving. In this lab, we look into the general and alcohol-related traffic laws and demographic statistics of 48 continental U.S. states from 1980 through 2004 to answer the question **"Do changes in traffic laws affect traffic fatalities?"**  
 Source: https://www.nsc.org/road-safety/safety-topics/fatality-estimates, https://www.nhtsa.gov/risky-driving/drunk-driving 
 
 # About the data
@@ -44,27 +44,27 @@ load("data/driving.RData")
 unique(data$state)
 ```
 
-This dataset contains 1200 observations of 56 variables that spans across 25 years from 1980 to 2004. There is a year column, as well as 25 dummy variables corresponding to each year. The dataset contains data for 48 continental U.S. states and each state is numbered from 1 to 51 with 2, 9 and 12 missing. Remaining columns hold variables related to state's data laws, data fatalities, and population demographics. Below we list the variables, their definitions and their values:
+This dataset contains 1200 observations of 56 variables that spans across 25 years from 1980 to 2004. There is a year column, as well as 25 dummy variables corresponding to each year. The dataset contains data for 48 continental U.S. states and each state is numbered from 1 to 51 with 2, 9 and 12 missing. Remaining columns hold variables related to state's traffic laws, traffic fatalities, and population demographics. Below we list the variables, their definitions and their values:
 
-*data Laws*
+*Traffic Laws*
 - "sl*" variables correspond to the speed limit mandated by the state in a given year. For example, "sl55" relates to whether or not a state had a 55 mph speed limit. Values range from 0 to 1, with fractions representing the amount of time for which the limit was enforced by law that year given a change in state law. 
 - "seatbelt" consists of values 0, 1 and 2 with 0 being no seatbelt law, 1 being primary (no other violation required to give a ticket), and 2 being secondary (additional violated required for a ticket). Dummy variables, "sbprim" and "sbsecon", also signify the the same thing. 
 - "gdl" represents graduated driver licensing, which is a three-stage approach to granting young drivers full license privileges. Values range from 0 to 1, with fractions representing the amount of time for which the limit was enforced by law that year given a change in state law. 
 
-*Alcohol-Related data Laws*
+*Alcohol-Related Traffic Laws*
 - "minage" is the minimum drinking age, with values from 18-21 and the majority being 21 years old. 
 - "zerotol" indiciates whether or not a state enacted a Zero Tolerance policy for drinking that makes it a criminal offense when drivers under the age of 21 drive with even a small amount of alcohol in their system. Values under this column consist mostly of 0's and 1's with occasional fractions. 
 - "bac" columns denote the blood alcohol content allowed by each state, with "bac08" representing 8% and "bac10" representing 10%.
 - "perse" relates to "Per se" laws in DUI cases. This law establishes that once an individual is shown to have a BAC at or above the state's allowed percent, that person is considered intoxicated by law. Such laws allow a person to be established as impaired without on-scene evaluation such as sobriety testing. Values range from 0 to 1, with fractions representing the amount of time for which the limit was enforced by law that year given a change in state law. 
 
-*data Fatalities*
+*Traffic Fatalities*
 Fatality statistics are recorded for each state over the 25-year period. The statistics are provided in three ways: total fatalities, nighttime fatalities and weekend fatalities. Below are the exact definitions:
-- totfat, nghtfat, and wkndfat represent the total data/nighttime/weekend fatalities with values ranging from ranging from 63 to 5504, 26-2918 and 10 to 1499 respectively
+- totfat, nghtfat, and wkndfat represent the total traffic/nighttime/weekend fatalities with values ranging from ranging from 63 to 5504, 26-2918 and 10 to 1499 respectively
 - totfatpvm, nghtfatpvm, wkndfatpvm: total/nighttime/weekend fatalities per 100 million miles ranging from 0.78 to 5.70, 0.27 to 3.00, and 0.11 to 1.67 respectively
 - totfatrte,nghtfatrte, wkndfatrte: total/nighttime/weekend fatalities per 100,000 population ranging from 6.2 to 53.3, 2.7 to 29.6 and 1.2 to 14.4 respectively
 
 *Demographics*
-In addition to the data laws and fatalities, this dataset contains demographic information including state population, unemployment rate, and percentage of population between the age 14 and 24. Also included are total vehicle miles driven (in billions) and per capita. 
+In addition to the traffic laws and fatalities, this dataset contains demographic information including state population, unemployment rate, and percentage of population between the age 14 and 24. Also included are total vehicle miles driven (in billions) and per capita. 
 
 # EDA
 ```{r fig.show='hold', fig.align='center', out.width='49%', results='hide'}
@@ -77,7 +77,7 @@ d6 <- data %>% ggplot(aes(wkndfatpvm)) + geom_density(kernel = "gaussian", size 
 d7 <- data %>% ggplot(aes(totfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Total Per Capita")
 d8 <- data %>% ggplot(aes(nghtfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Night Per Capita")
 d9 <- data %>% ggplot(aes(wkndfatrte)) + geom_density(kernel = "gaussian", size = 1) + theme_bw() + ggtitle("Weekend Per Capita")
-grid.arrange(d1, d2, d3, d4, d5, d6, d7, d8, d9, nrow = 3, ncol = 3, top = quote("data Fatalities"))
+grid.arrange(d1, d2, d3, d4, d5, d6, d7, d8, d9, nrow = 3, ncol = 3, top = quote("Traffic Fatalities"))
 ```
 All fatality variables skew right, with the skew most apparent when not normalized by population or by mileage. We may consider taking the log of the fatalities given the values are always positive and have a meaningful zero point. When comparing how a log transformation affects these variables, $totfatpvm$,$nghtfatpvm$ and $wkndfatpvm$ respond most favorably to the log transformation
 
@@ -94,7 +94,7 @@ b6 <- data %>% ggplot(aes(factor(year),wkndfatpvm)) + geom_boxplot() + ggtitle("
 b7 <- data %>% ggplot(aes(factor(year),totfatrte)) + geom_boxplot() + ggtitle("Total Per Capita") +t
 b8 <- data %>% ggplot(aes(factor(year),nghtfatrte)) + geom_boxplot() + ggtitle("Night Per Capita") +t
 b9 <- data %>% ggplot(aes(factor(year),wkndfatrte)) + geom_boxplot() + ggtitle("Weekend Per Capita") +t
-grid.arrange(b1,b2,b3,b4,b5,b6,b7,b8,b9, nrow = 3, ncol = 3, top = quote("data Fatalities by Year: 1980-2004"))
+grid.arrange(b1,b2,b3,b4,b5,b6,b7,b8,b9, nrow = 3, ncol = 3, top = quote("Traffic Fatalities by Year: 1980-2004"))
 ```
 The number of fatalities across total, night and weekend look mostly unchanged over the years. However, when looking at noramlized fatality rates, there are obvious downward trends at the national level. 
 
@@ -158,7 +158,7 @@ Per se law seemed to have a significant negative effect on fatality rate at the 
 4. Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
 
 ```{r}
-m3.fe <- plm(totfatrte ~d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=plm.data(data, c('state', 'year')), model = "within")
+m3.fe <- plm(totfatrte ~d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=plm.data(data, c('state', 'year')), model='within')
 summary(m3.fe)
 ```
 
